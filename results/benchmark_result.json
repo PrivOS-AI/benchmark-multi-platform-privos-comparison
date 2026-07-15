@@ -1,0 +1,513 @@
+{
+  "tokenizer_backend": "tiktoken/cl100k_base",
+  "per_call_framing_tokens": 50,
+  "workflows": [
+    "s1_lead_intake",
+    "s2_pipeline_sync",
+    "s3_daily_digest"
+  ],
+  "baseline": {
+    "label": "PrivOS unified",
+    "baseline": true,
+    "fixed_schema_tokens": 558,
+    "fixed_breakdown": {
+      "privos": {
+        "tool_count": 6,
+        "avg_tokens_per_tool": 93,
+        "tokens": 558
+      }
+    },
+    "scenarios": [
+      {
+        "id": "s1_lead_intake",
+        "title": "Lead intake: read customer chat -> create task -> update deal",
+        "num_calls": 3,
+        "overhead_calls": 0,
+        "variable_io_tokens": 422,
+        "orchestration_tokens": 150,
+        "workflow_tokens": 572,
+        "calls": [
+          {
+            "op": "getMessages",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 23,
+            "response_tokens": 91,
+            "call_tokens": 114
+          },
+          {
+            "op": "upsertItem",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 69,
+            "response_tokens": 89,
+            "call_tokens": 158
+          },
+          {
+            "op": "upsertItem",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 58,
+            "response_tokens": 92,
+            "call_tokens": 150
+          }
+        ]
+      },
+      {
+        "id": "s2_pipeline_sync",
+        "title": "Pipeline sync: read task board -> update deal stage -> post chat notice",
+        "num_calls": 3,
+        "overhead_calls": 0,
+        "variable_io_tokens": 310,
+        "orchestration_tokens": 150,
+        "workflow_tokens": 460,
+        "calls": [
+          {
+            "op": "listItems",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 27,
+            "response_tokens": 72,
+            "call_tokens": 99
+          },
+          {
+            "op": "upsertItem",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 31,
+            "response_tokens": 70,
+            "call_tokens": 101
+          },
+          {
+            "op": "postMessage",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 40,
+            "response_tokens": 70,
+            "call_tokens": 110
+          }
+        ]
+      },
+      {
+        "id": "s3_daily_digest",
+        "title": "Daily digest: read channel -> create two tasks -> update CRM lifecycle",
+        "num_calls": 4,
+        "overhead_calls": 0,
+        "variable_io_tokens": 454,
+        "orchestration_tokens": 200,
+        "workflow_tokens": 654,
+        "calls": [
+          {
+            "op": "getMessages",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 23,
+            "response_tokens": 127,
+            "call_tokens": 150
+          },
+          {
+            "op": "upsertItem",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 45,
+            "response_tokens": 63,
+            "call_tokens": 108
+          },
+          {
+            "op": "upsertItem",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 43,
+            "response_tokens": 61,
+            "call_tokens": 104
+          },
+          {
+            "op": "upsertItem",
+            "platform": "privos",
+            "overhead": false,
+            "request_tokens": 33,
+            "response_tokens": 59,
+            "call_tokens": 92
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "variable_io_tokens": 1186,
+      "orchestration_tokens": 500,
+      "num_calls": 10,
+      "session_total_tokens": 2244,
+      "workflow_only_tokens": 1686
+    }
+  },
+  "comparisons": [
+    {
+      "label": "Telegram + Notion + HubSpot",
+      "cost": {
+        "label": "Telegram + Notion + HubSpot",
+        "baseline": false,
+        "fixed_schema_tokens": 9056,
+        "fixed_breakdown": {
+          "telegram": {
+            "tool_count": 9,
+            "avg_tokens_per_tool": 146,
+            "tokens": 1310
+          },
+          "notion": {
+            "tool_count": 15,
+            "avg_tokens_per_tool": 200,
+            "tokens": 3008
+          },
+          "hubspot": {
+            "tool_count": 25,
+            "avg_tokens_per_tool": 190,
+            "tokens": 4738
+          }
+        },
+        "scenarios": [
+          {
+            "id": "s1_lead_intake",
+            "title": "Lead intake: read customer chat -> create task -> update deal",
+            "num_calls": 5,
+            "overhead_calls": 2,
+            "variable_io_tokens": 1897,
+            "orchestration_tokens": 250,
+            "workflow_tokens": 2147,
+            "calls": [
+              {
+                "op": "getUpdates",
+                "platform": "telegram",
+                "overhead": false,
+                "request_tokens": 20,
+                "response_tokens": 127,
+                "call_tokens": 147
+              },
+              {
+                "op": "retrieveDatabase",
+                "platform": "notion",
+                "overhead": true,
+                "request_tokens": 44,
+                "response_tokens": 621,
+                "call_tokens": 665
+              },
+              {
+                "op": "createPage",
+                "platform": "notion",
+                "overhead": false,
+                "request_tokens": 128,
+                "response_tokens": 544,
+                "call_tokens": 672
+              },
+              {
+                "op": "searchContacts",
+                "platform": "hubspot",
+                "overhead": true,
+                "request_tokens": 51,
+                "response_tokens": 132,
+                "call_tokens": 183
+              },
+              {
+                "op": "updateDeal",
+                "platform": "hubspot",
+                "overhead": false,
+                "request_tokens": 56,
+                "response_tokens": 174,
+                "call_tokens": 230
+              }
+            ]
+          },
+          {
+            "id": "s2_pipeline_sync",
+            "title": "Pipeline sync: read task board -> update deal stage -> post chat notice",
+            "num_calls": 4,
+            "overhead_calls": 1,
+            "variable_io_tokens": 1042,
+            "orchestration_tokens": 200,
+            "workflow_tokens": 1242,
+            "calls": [
+              {
+                "op": "queryDatabase",
+                "platform": "notion",
+                "overhead": false,
+                "request_tokens": 62,
+                "response_tokens": 500,
+                "call_tokens": 562
+              },
+              {
+                "op": "searchDeals",
+                "platform": "hubspot",
+                "overhead": true,
+                "request_tokens": 52,
+                "response_tokens": 129,
+                "call_tokens": 181
+              },
+              {
+                "op": "updateDeal",
+                "platform": "hubspot",
+                "overhead": false,
+                "request_tokens": 27,
+                "response_tokens": 144,
+                "call_tokens": 171
+              },
+              {
+                "op": "sendMessage",
+                "platform": "telegram",
+                "overhead": false,
+                "request_tokens": 40,
+                "response_tokens": 88,
+                "call_tokens": 128
+              }
+            ]
+          },
+          {
+            "id": "s3_daily_digest",
+            "title": "Daily digest: read two channels -> create two tasks -> update CRM lifecycle",
+            "num_calls": 5,
+            "overhead_calls": 1,
+            "variable_io_tokens": 1624,
+            "orchestration_tokens": 250,
+            "workflow_tokens": 1874,
+            "calls": [
+              {
+                "op": "getUpdates",
+                "platform": "telegram",
+                "overhead": false,
+                "request_tokens": 20,
+                "response_tokens": 176,
+                "call_tokens": 196
+              },
+              {
+                "op": "createPage",
+                "platform": "notion",
+                "overhead": false,
+                "request_tokens": 99,
+                "response_tokens": 460,
+                "call_tokens": 559
+              },
+              {
+                "op": "createPage",
+                "platform": "notion",
+                "overhead": false,
+                "request_tokens": 97,
+                "response_tokens": 454,
+                "call_tokens": 551
+              },
+              {
+                "op": "searchContacts",
+                "platform": "hubspot",
+                "overhead": true,
+                "request_tokens": 45,
+                "response_tokens": 125,
+                "call_tokens": 170
+              },
+              {
+                "op": "updateContact",
+                "platform": "hubspot",
+                "overhead": false,
+                "request_tokens": 28,
+                "response_tokens": 120,
+                "call_tokens": 148
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "variable_io_tokens": 4563,
+          "orchestration_tokens": 700,
+          "num_calls": 14,
+          "session_total_tokens": 14319,
+          "workflow_only_tokens": 5263
+        }
+      },
+      "summary_vs_baseline": {
+        "fixed_schema_x": 16.23,
+        "variable_io_x": 3.85,
+        "orchestration_x": 1.4,
+        "session_total_x": 6.38,
+        "workflow_only_x": 3.12,
+        "num_calls_other": 14,
+        "num_calls_baseline": 10
+      }
+    },
+    {
+      "label": "Discord + Trello + HubSpot",
+      "cost": {
+        "label": "Discord + Trello + HubSpot",
+        "baseline": false,
+        "fixed_schema_tokens": 9241,
+        "fixed_breakdown": {
+          "discord": {
+            "tool_count": 12,
+            "avg_tokens_per_tool": 162,
+            "tokens": 1938
+          },
+          "trello": {
+            "tool_count": 15,
+            "avg_tokens_per_tool": 171,
+            "tokens": 2565
+          },
+          "hubspot": {
+            "tool_count": 25,
+            "avg_tokens_per_tool": 190,
+            "tokens": 4738
+          }
+        },
+        "scenarios": [
+          {
+            "id": "s1_lead_intake",
+            "title": "Lead intake: read customer chat -> create task -> update deal",
+            "num_calls": 4,
+            "overhead_calls": 1,
+            "variable_io_tokens": 1127,
+            "orchestration_tokens": 200,
+            "workflow_tokens": 1327,
+            "calls": [
+              {
+                "op": "getChannelMessages",
+                "platform": "discord",
+                "overhead": false,
+                "request_tokens": 22,
+                "response_tokens": 188,
+                "call_tokens": 210
+              },
+              {
+                "op": "createCard",
+                "platform": "trello",
+                "overhead": false,
+                "request_tokens": 86,
+                "response_tokens": 418,
+                "call_tokens": 504
+              },
+              {
+                "op": "searchContacts",
+                "platform": "hubspot",
+                "overhead": true,
+                "request_tokens": 51,
+                "response_tokens": 132,
+                "call_tokens": 183
+              },
+              {
+                "op": "updateDeal",
+                "platform": "hubspot",
+                "overhead": false,
+                "request_tokens": 56,
+                "response_tokens": 174,
+                "call_tokens": 230
+              }
+            ]
+          },
+          {
+            "id": "s2_pipeline_sync",
+            "title": "Pipeline sync: read task board -> update deal stage -> post chat notice",
+            "num_calls": 4,
+            "overhead_calls": 1,
+            "variable_io_tokens": 938,
+            "orchestration_tokens": 200,
+            "workflow_tokens": 1138,
+            "calls": [
+              {
+                "op": "getListCards",
+                "platform": "trello",
+                "overhead": false,
+                "request_tokens": 43,
+                "response_tokens": 349,
+                "call_tokens": 392
+              },
+              {
+                "op": "searchDeals",
+                "platform": "hubspot",
+                "overhead": true,
+                "request_tokens": 52,
+                "response_tokens": 129,
+                "call_tokens": 181
+              },
+              {
+                "op": "updateDeal",
+                "platform": "hubspot",
+                "overhead": false,
+                "request_tokens": 27,
+                "response_tokens": 144,
+                "call_tokens": 171
+              },
+              {
+                "op": "createMessage",
+                "platform": "discord",
+                "overhead": false,
+                "request_tokens": 39,
+                "response_tokens": 155,
+                "call_tokens": 194
+              }
+            ]
+          },
+          {
+            "id": "s3_daily_digest",
+            "title": "Daily digest: read channel -> create two tasks -> update CRM lifecycle",
+            "num_calls": 5,
+            "overhead_calls": 1,
+            "variable_io_tokens": 1443,
+            "orchestration_tokens": 250,
+            "workflow_tokens": 1693,
+            "calls": [
+              {
+                "op": "getChannelMessages",
+                "platform": "discord",
+                "overhead": false,
+                "request_tokens": 22,
+                "response_tokens": 313,
+                "call_tokens": 335
+              },
+              {
+                "op": "createCard",
+                "platform": "trello",
+                "overhead": false,
+                "request_tokens": 54,
+                "response_tokens": 341,
+                "call_tokens": 395
+              },
+              {
+                "op": "createCard",
+                "platform": "trello",
+                "overhead": false,
+                "request_tokens": 52,
+                "response_tokens": 343,
+                "call_tokens": 395
+              },
+              {
+                "op": "searchContacts",
+                "platform": "hubspot",
+                "overhead": true,
+                "request_tokens": 45,
+                "response_tokens": 125,
+                "call_tokens": 170
+              },
+              {
+                "op": "updateContact",
+                "platform": "hubspot",
+                "overhead": false,
+                "request_tokens": 28,
+                "response_tokens": 120,
+                "call_tokens": 148
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "variable_io_tokens": 3508,
+          "orchestration_tokens": 650,
+          "num_calls": 13,
+          "session_total_tokens": 13399,
+          "workflow_only_tokens": 4158
+        }
+      },
+      "summary_vs_baseline": {
+        "fixed_schema_x": 16.56,
+        "variable_io_x": 2.96,
+        "orchestration_x": 1.3,
+        "session_total_x": 5.97,
+        "workflow_only_x": 2.47,
+        "num_calls_other": 13,
+        "num_calls_baseline": 10
+      }
+    }
+  ]
+}

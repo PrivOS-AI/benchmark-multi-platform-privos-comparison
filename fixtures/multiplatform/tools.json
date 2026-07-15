@@ -1,0 +1,110 @@
+{
+  "label": "Telegram + Notion + HubSpot",
+  "baseline": false,
+  "_note": "MCP tool catalogs the agent loads into context when connected to three separate SaaS servers. sample_tools mirror each vendor's documented request schema; tool_count is the documented number of tools each server exposes, used to scale the per-server average. See docs/references.md for sources.",
+  "servers": {
+    "telegram": {
+      "tool_count": 9,
+      "sample_tools": {
+        "get_updates": {
+          "name": "telegram_get_updates",
+          "description": "Receive incoming updates (messages, edited messages, callback queries) for the bot via long polling. Returns an array of Update objects newer than the given offset.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "offset": {"type": "integer", "description": "Identifier of the first update to be returned"},
+              "limit": {"type": "integer", "description": "Limits the number of updates to be retrieved (1-100)"},
+              "timeout": {"type": "integer", "description": "Timeout in seconds for long polling"},
+              "allowed_updates": {"type": "array", "items": {"type": "string"}, "description": "List of the update types you want your bot to receive"}
+            }
+          }
+        },
+        "send_message": {
+          "name": "telegram_send_message",
+          "description": "Send a text message to a chat. Supports Markdown/HTML formatting, reply threading, and inline keyboards.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "chat_id": {"type": "string", "description": "Unique identifier for the target chat or username of the target channel"},
+              "text": {"type": "string", "description": "Text of the message to be sent, 1-4096 characters"},
+              "parse_mode": {"type": "string", "enum": ["Markdown", "MarkdownV2", "HTML"], "description": "Mode for parsing entities in the message text"},
+              "reply_to_message_id": {"type": "integer", "description": "If the message is a reply, id of the original message"},
+              "disable_notification": {"type": "boolean", "description": "Sends the message silently"}
+            },
+            "required": ["chat_id", "text"]
+          }
+        }
+      }
+    },
+    "notion": {
+      "tool_count": 15,
+      "sample_tools": {
+        "create_page": {
+          "name": "notion_create_page",
+          "description": "Creates a new page in a database or as a child of an existing page. Requires parent and properties matching the parent database schema. Each property value must be wrapped in its type-specific object structure (title, select, status, date, people, rich_text).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "parent": {"type": "object", "properties": {"database_id": {"type": "string"}, "page_id": {"type": "string"}, "type": {"type": "string"}}, "description": "The parent database or page this page belongs to"},
+              "properties": {"type": "object", "description": "Property values keyed by name or id. title:[{text:{content}}], select:{name}, status:{name}, date:{start,end}, people:[{id}], rich_text:[{text:{content}}]"},
+              "children": {"type": "array", "items": {"type": "object"}, "description": "Page content as an array of block objects"},
+              "icon": {"type": "object", "description": "Page icon (emoji or external file object)"},
+              "cover": {"type": "object", "description": "Page cover, an external file object"}
+            },
+            "required": ["parent", "properties"]
+          }
+        },
+        "query_database": {
+          "name": "notion_query_database",
+          "description": "Get a list of pages contained in a database, filtered and ordered. Returns a paginated list of full page objects. Filters use property-type-specific condition objects.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "database_id": {"type": "string", "description": "Identifier for the database to query"},
+              "filter": {"type": "object", "description": "A filter condition or compound (and/or) of conditions on page properties"},
+              "sorts": {"type": "array", "items": {"type": "object", "properties": {"property": {"type": "string"}, "direction": {"type": "string", "enum": ["ascending", "descending"]}}}, "description": "Ordering criteria"},
+              "start_cursor": {"type": "string", "description": "Opaque cursor for pagination"},
+              "page_size": {"type": "integer", "description": "Number of items per page, max 100"}
+            },
+            "required": ["database_id"]
+          }
+        }
+      }
+    },
+    "hubspot": {
+      "tool_count": 25,
+      "sample_tools": {
+        "update_object": {
+          "name": "hubspot_crm_update_object",
+          "description": "Update the properties of a CRM object (contact, company, deal, ticket). PATCH semantics: only supplied properties change. Returns the full object with default and updated properties.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "objectType": {"type": "string", "enum": ["contacts", "companies", "deals", "tickets"], "description": "The CRM object type"},
+              "objectId": {"type": "string", "description": "The record id, or a unique property value when idProperty is set"},
+              "properties": {"type": "object", "description": "Map of property internal names to new values (all values are strings)"},
+              "idProperty": {"type": "string", "description": "Optional unique property to use as the id lookup"}
+            },
+            "required": ["objectType", "objectId", "properties"]
+          }
+        },
+        "search_objects": {
+          "name": "hubspot_crm_search_objects",
+          "description": "Search CRM records by property filters, returning matching records with the requested properties. Supports filter groups (OR of ANDs), sorting, and pagination.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "objectType": {"type": "string", "enum": ["contacts", "companies", "deals", "tickets"], "description": "The CRM object type to search"},
+              "filterGroups": {"type": "array", "items": {"type": "object", "properties": {"filters": {"type": "array", "items": {"type": "object", "properties": {"propertyName": {"type": "string"}, "operator": {"type": "string"}, "value": {"type": "string"}}}}}}, "description": "Groups of filters; groups are ORed, filters within a group are ANDed"},
+              "properties": {"type": "array", "items": {"type": "string"}, "description": "Which properties to return"},
+              "sorts": {"type": "array", "items": {"type": "object"}, "description": "Sort criteria"},
+              "limit": {"type": "integer", "description": "Max results per page, up to 200"},
+              "after": {"type": "string", "description": "Paging cursor"}
+            },
+            "required": ["objectType", "filterGroups"]
+          }
+        }
+      }
+    }
+  }
+}

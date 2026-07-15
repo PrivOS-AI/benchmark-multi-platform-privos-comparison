@@ -1,0 +1,51 @@
+{
+  "label": "PrivOS unified",
+  "baseline": true,
+  "_note": "Single MCP tool catalog for the PrivOS unified stack. Chat rooms, tasks and CRM records share one data model over hub /api/v1 REST, so one server with a small tool set covers all three domains. See docs/references.md.",
+  "servers": {
+    "privos": {
+      "tool_count": 6,
+      "sample_tools": {
+        "get_messages": {
+          "name": "privos_get_messages",
+          "description": "Fetch recent messages from a room (channel, discussion, or DM).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "roomId": {"type": "string", "description": "The room id"},
+              "limit": {"type": "integer", "description": "Number of messages to return"}
+            },
+            "required": ["roomId"]
+          }
+        },
+        "list_items": {
+          "name": "privos_list_items",
+          "description": "Read or query items in a list. Lists back both tasks and CRM records; fields are the list's columns.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "listId": {"type": "string", "description": "The list id"},
+              "stageId": {"type": "string", "description": "Optional stage/column filter"},
+              "limit": {"type": "integer", "description": "Number of items to return"}
+            },
+            "required": ["listId"]
+          }
+        },
+        "upsert_item": {
+          "name": "privos_upsert_item",
+          "description": "Create or update a list item (task or CRM record). Omit itemId to create; supply itemId to update. Fields are keyed by the list's column names.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "listId": {"type": "string", "description": "The list id"},
+              "itemId": {"type": "string", "description": "The item id; omit to create a new item"},
+              "stageId": {"type": "string", "description": "Target stage/column id"},
+              "fields": {"type": "object", "description": "Field values keyed by field name"}
+            },
+            "required": ["listId", "fields"]
+          }
+        }
+      }
+    }
+  }
+}

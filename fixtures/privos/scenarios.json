@@ -1,0 +1,73 @@
+{
+  "_note": "The same three workflows executed against the PrivOS unified stack. Chat, tasks and CRM are rooms and list items over hub /api/v1. List column schemas are known to the agent, so no pre-fetch (schema/id lookup) calls are needed; overhead is false throughout.",
+  "scenarios": [
+    {
+      "id": "s1_lead_intake",
+      "title": "Lead intake: read customer chat -> create task -> update deal",
+      "calls": [
+        {
+          "platform": "privos", "op": "getMessages", "purpose": "read inbound customer message", "overhead": false,
+          "request": {"method": "GET", "path": "/api/v1/rooms/room-sales-inbound/messages", "limit": 10},
+          "response": {"messages": [{"_id": "m8f2a1", "rid": "room-sales-inbound", "u": {"_id": "u30551", "username": "linhtran", "name": "Linh Tran"}, "ts": "2026-07-15T13:40:00.000Z", "msg": "Hi, we want to upgrade to the Pro plan for 5 seats. Can you send a quote and set up onboarding next week?"}]}
+        },
+        {
+          "platform": "privos", "op": "upsertItem", "purpose": "create the follow-up task", "overhead": false,
+          "request": {"method": "POST", "path": "/api/v1/lists/list-sales-tasks/items", "stageId": "stage-todo", "fields": {"name": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding", "priority": "High", "due": "2026-07-22", "customer": "Linh Tran (@linhtran)"}},
+          "response": {"_id": "it-9a2b", "listId": "list-sales-tasks", "stageId": "stage-todo", "fields": {"name": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding", "priority": "High", "due": "2026-07-22", "customer": "Linh Tran (@linhtran)"}, "createdAt": "2026-07-15T13:48:00.000Z"}
+        },
+        {
+          "platform": "privos", "op": "upsertItem", "purpose": "advance deal stage + next step", "overhead": false,
+          "request": {"method": "PATCH", "path": "/api/v1/lists/list-crm-deals/items/it-crm-4471", "fields": {"stage": "Quote Sent", "amount": 1188, "nextStep": "Send Pro plan quote (5 seats), schedule onboarding 2026-07-22"}},
+          "response": {"_id": "it-crm-4471", "listId": "list-crm-deals", "fields": {"dealName": "Linh Tran - Pro Upgrade", "stage": "Quote Sent", "amount": 1188, "nextStep": "Send Pro plan quote (5 seats), schedule onboarding 2026-07-22", "customer": "Linh Tran (@linhtran)"}, "updatedAt": "2026-07-15T13:48:00.000Z"}
+        }
+      ]
+    },
+    {
+      "id": "s2_pipeline_sync",
+      "title": "Pipeline sync: read task board -> update deal stage -> post chat notice",
+      "calls": [
+        {
+          "platform": "privos", "op": "listItems", "purpose": "read tasks marked done today", "overhead": false,
+          "request": {"method": "GET", "path": "/api/v1/lists/list-sales-tasks/items", "stageId": "stage-done", "limit": 5},
+          "response": {"items": [{"_id": "it-9a2b", "listId": "list-sales-tasks", "stageId": "stage-done", "fields": {"name": "Demo call with Linh Tran", "priority": "High", "customer": "Linh Tran (@linhtran)"}, "updatedAt": "2026-07-15T09:00:00.000Z"}]}
+        },
+        {
+          "platform": "privos", "op": "upsertItem", "purpose": "advance stage to closed-won", "overhead": false,
+          "request": {"method": "PATCH", "path": "/api/v1/lists/list-crm-deals/items/it-crm-4471", "fields": {"stage": "Closed Won"}},
+          "response": {"_id": "it-crm-4471", "listId": "list-crm-deals", "fields": {"dealName": "Linh Tran - Pro Upgrade", "stage": "Closed Won", "amount": 1188, "customer": "Linh Tran (@linhtran)"}, "updatedAt": "2026-07-15T13:48:00.000Z"}
+        },
+        {
+          "platform": "privos", "op": "postMessage", "purpose": "notify sales channel", "overhead": false,
+          "request": {"method": "POST", "path": "/api/v1/rooms/room-sales-ops/messages", "msg": "Deal 'Linh Tran - Pro Upgrade' ($1188) moved to Closed Won."},
+          "response": {"_id": "m9c3b", "rid": "room-sales-ops", "u": {"_id": "bot-sales", "username": "sales_ops_bot"}, "ts": "2026-07-15T13:48:00.000Z", "msg": "Deal 'Linh Tran - Pro Upgrade' ($1188) moved to Closed Won."}
+        }
+      ]
+    },
+    {
+      "id": "s3_daily_digest",
+      "title": "Daily digest: read channel -> create two tasks -> update CRM lifecycle",
+      "calls": [
+        {
+          "platform": "privos", "op": "getMessages", "purpose": "read overnight messages", "overhead": false,
+          "request": {"method": "GET", "path": "/api/v1/rooms/room-sales-ops/messages", "limit": 20},
+          "response": {"messages": [{"_id": "m101", "rid": "room-sales-ops", "u": {"_id": "u40120", "username": "minh_ops", "name": "Minh"}, "ts": "2026-07-15T09:00:00.000Z", "msg": "Customer Acme asked for SSO pricing."}, {"_id": "m102", "rid": "room-sales-ops", "u": {"_id": "u40230", "username": "hoa_cs", "name": "Hoa"}, "ts": "2026-07-15T09:20:00.000Z", "msg": "Beta customer wants a renewal call."}]}
+        },
+        {
+          "platform": "privos", "op": "upsertItem", "purpose": "task 1 - SSO pricing", "overhead": false,
+          "request": {"method": "POST", "path": "/api/v1/lists/list-sales-tasks/items", "stageId": "stage-todo", "fields": {"name": "Send SSO pricing to Acme", "priority": "Medium", "customer": "Acme"}},
+          "response": {"_id": "it-aa01", "listId": "list-sales-tasks", "stageId": "stage-todo", "fields": {"name": "Send SSO pricing to Acme", "priority": "Medium", "customer": "Acme"}, "createdAt": "2026-07-15T13:48:00.000Z"}
+        },
+        {
+          "platform": "privos", "op": "upsertItem", "purpose": "task 2 - renewal call", "overhead": false,
+          "request": {"method": "POST", "path": "/api/v1/lists/list-sales-tasks/items", "stageId": "stage-todo", "fields": {"name": "Schedule renewal call with Beta customer", "priority": "High", "customer": "Beta"}},
+          "response": {"_id": "it-bb02", "listId": "list-sales-tasks", "stageId": "stage-todo", "fields": {"name": "Schedule renewal call with Beta customer", "priority": "High", "customer": "Beta"}, "createdAt": "2026-07-15T13:48:00.000Z"}
+        },
+        {
+          "platform": "privos", "op": "upsertItem", "purpose": "advance Acme lifecycle to SQL", "overhead": false,
+          "request": {"method": "PATCH", "path": "/api/v1/lists/list-crm-contacts/items/it-crm-acme", "fields": {"lifecycle": "Sales Qualified Lead"}},
+          "response": {"_id": "it-crm-acme", "listId": "list-crm-contacts", "fields": {"company": "Acme", "email": "buyer@acme.com", "lifecycle": "Sales Qualified Lead"}, "updatedAt": "2026-07-15T13:48:00.000Z"}
+        }
+      ]
+    }
+  ]
+}

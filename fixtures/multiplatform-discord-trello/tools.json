@@ -1,0 +1,113 @@
+{
+  "label": "Discord + Trello + HubSpot",
+  "baseline": false,
+  "_note": "Alternative multi-platform stack proving the gap is not Telegram/Notion-specific. Discord (chat) + Trello (tasks) + HubSpot (CRM), each a separate MCP server. sample_tools mirror each vendor's documented request schema; tool_count scales the per-server average. Sources in docs/references.md.",
+  "servers": {
+    "discord": {
+      "tool_count": 12,
+      "sample_tools": {
+        "get_channel_messages": {
+          "name": "discord_get_channel_messages",
+          "description": "Returns the messages for a channel. Returns an array of Message objects on success, newest first, with author, content, attachments, embeds, mentions, and timestamps.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "channel_id": {"type": "string", "description": "The id of the channel to read"},
+              "limit": {"type": "integer", "description": "Max number of messages to return (1-100)"},
+              "before": {"type": "string", "description": "Get messages before this message id"},
+              "after": {"type": "string", "description": "Get messages after this message id"},
+              "around": {"type": "string", "description": "Get messages around this message id"}
+            },
+            "required": ["channel_id"]
+          }
+        },
+        "create_message": {
+          "name": "discord_create_message",
+          "description": "Post a message to a guild text or DM channel. Supports content, embeds, components, allowed_mentions, and message references for replies.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "channel_id": {"type": "string", "description": "The id of the channel to post to"},
+              "content": {"type": "string", "description": "Message contents, up to 2000 characters"},
+              "embeds": {"type": "array", "items": {"type": "object"}, "description": "Up to 10 rich embed objects"},
+              "message_reference": {"type": "object", "properties": {"message_id": {"type": "string"}, "channel_id": {"type": "string"}}, "description": "Include to make the message a reply"},
+              "allowed_mentions": {"type": "object", "description": "Controls which mentions are allowed to ping"},
+              "tts": {"type": "boolean", "description": "True if this is a TTS message"}
+            },
+            "required": ["channel_id"]
+          }
+        }
+      }
+    },
+    "trello": {
+      "tool_count": 15,
+      "sample_tools": {
+        "create_card": {
+          "name": "trello_create_card",
+          "description": "Create a new card on a list. Requires idList; accepts name, desc, due, idMembers, idLabels, pos. Returns the full Card object including badges, cover, shortUrl, and board/list ids.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "idList": {"type": "string", "description": "The id of the list the card should be created in"},
+              "name": {"type": "string", "description": "The name/title of the card"},
+              "desc": {"type": "string", "description": "The description for the card"},
+              "due": {"type": "string", "description": "A due date for the card (ISO 8601)"},
+              "idMembers": {"type": "array", "items": {"type": "string"}, "description": "Comma-separated list of member ids to add"},
+              "idLabels": {"type": "array", "items": {"type": "string"}, "description": "Comma-separated list of label ids to add"},
+              "pos": {"type": "string", "description": "The position of the card: top, bottom, or a positive float"}
+            },
+            "required": ["idList"]
+          }
+        },
+        "get_list_cards": {
+          "name": "trello_get_list_cards",
+          "description": "List the cards in a list. Returns an array of full Card objects with badges, dateLastActivity, desc, due, idBoard, idList, labels, name, pos, shortUrl and url.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "idList": {"type": "string", "description": "The id of the list"},
+              "fields": {"type": "string", "description": "all or a comma-separated list of card fields to return"},
+              "filter": {"type": "string", "enum": ["all", "closed", "none", "open"], "description": "Which cards to return"}
+            },
+            "required": ["idList"]
+          }
+        }
+      }
+    },
+    "hubspot": {
+      "tool_count": 25,
+      "sample_tools": {
+        "update_object": {
+          "name": "hubspot_crm_update_object",
+          "description": "Update the properties of a CRM object (contact, company, deal, ticket). PATCH semantics: only supplied properties change. Returns the full object with default and updated properties.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "objectType": {"type": "string", "enum": ["contacts", "companies", "deals", "tickets"], "description": "The CRM object type"},
+              "objectId": {"type": "string", "description": "The record id, or a unique property value when idProperty is set"},
+              "properties": {"type": "object", "description": "Map of property internal names to new values (all values are strings)"},
+              "idProperty": {"type": "string", "description": "Optional unique property to use as the id lookup"}
+            },
+            "required": ["objectType", "objectId", "properties"]
+          }
+        },
+        "search_objects": {
+          "name": "hubspot_crm_search_objects",
+          "description": "Search CRM records by property filters, returning matching records with the requested properties. Supports filter groups (OR of ANDs), sorting, and pagination.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "objectType": {"type": "string", "enum": ["contacts", "companies", "deals", "tickets"], "description": "The CRM object type to search"},
+              "filterGroups": {"type": "array", "items": {"type": "object", "properties": {"filters": {"type": "array", "items": {"type": "object", "properties": {"propertyName": {"type": "string"}, "operator": {"type": "string"}, "value": {"type": "string"}}}}}}, "description": "Groups of filters; groups are ORed, filters within a group are ANDed"},
+              "properties": {"type": "array", "items": {"type": "string"}, "description": "Which properties to return"},
+              "sorts": {"type": "array", "items": {"type": "object"}, "description": "Sort criteria"},
+              "limit": {"type": "integer", "description": "Max results per page, up to 200"},
+              "after": {"type": "string", "description": "Paging cursor"}
+            },
+            "required": ["objectType", "filterGroups"]
+          }
+        }
+      }
+    }
+  }
+}

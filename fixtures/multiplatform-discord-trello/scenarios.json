@@ -1,0 +1,88 @@
+{
+  "_note": "Same three workflows as fixtures/multiplatform, run against Discord (chat) + Trello (tasks) + HubSpot (CRM). Shapes mirror each vendor's documented objects. Trello basic cards need no schema pre-fetch (unlike Notion), but HubSpot still needs an id search before update; overhead flags reflect that. Same business text as the other stacks for fairness.",
+  "scenarios": [
+    {
+      "id": "s1_lead_intake",
+      "title": "Lead intake: read customer chat -> create task -> update deal",
+      "calls": [
+        {
+          "platform": "discord", "op": "getChannelMessages", "purpose": "read inbound customer message", "overhead": false,
+          "request": {"method": "GET", "path": "/channels/9988776655443322110/messages", "limit": 10},
+          "response": [{"id": "1252334455667788990", "type": 0, "content": "Hi, we want to upgrade to the Pro plan for 5 seats. Can you send a quote and set up onboarding next week?", "channel_id": "9988776655443322110", "author": {"id": "305512874000111222", "username": "linhtran", "global_name": "Linh Tran", "avatar": "a1b2c3d4e5f6a7b8c9d0", "discriminator": "0", "public_flags": 0, "flags": 0, "bot": false}, "attachments": [], "embeds": [], "mentions": [], "mention_roles": [], "pinned": false, "mention_everyone": false, "tts": false, "timestamp": "2026-07-15T13:40:00.000000+00:00", "edited_timestamp": null, "flags": 0, "components": []}]
+        },
+        {
+          "platform": "trello", "op": "createCard", "purpose": "create the follow-up task", "overhead": false,
+          "request": {"method": "POST", "path": "/1/cards", "idList": "5f1a2b3c4d5e6f7a8b9c0d99", "name": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding", "desc": "Customer: Linh Tran (@linhtran)", "due": "2026-07-22T00:00:00.000Z"},
+          "response": {"id": "66a1b2c3d4e5f6a7b8c9d0e1", "badges": {"attachmentsByType": {"trello": {"board": 0, "card": 0}}, "location": false, "votes": 0, "viewingMemberVoted": false, "subscribed": false, "fogbugz": "", "checkItems": 0, "checkItemsChecked": 0, "checkItemsEarliestDue": null, "comments": 0, "attachments": 0, "description": true, "due": "2026-07-22T00:00:00.000Z", "dueComplete": false, "start": null}, "checkItemStates": [], "closed": false, "dueComplete": false, "dateLastActivity": "2026-07-15T13:48:00.000Z", "desc": "Customer: Linh Tran (@linhtran)", "descData": {"emoji": {}}, "due": "2026-07-22T00:00:00.000Z", "dueReminder": null, "email": null, "idBoard": "5f1a2b3c4d5e6f7a8b9c0d1e", "idChecklists": [], "idList": "5f1a2b3c4d5e6f7a8b9c0d99", "idMembers": [], "idMembersVoted": [], "idShort": 42, "idAttachmentCover": null, "labels": [], "idLabels": [], "manualCoverAttachment": false, "name": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding", "pos": 65535, "shortLink": "aBcDeFgH", "shortUrl": "https://trello.com/c/aBcDeFgH", "start": null, "subscribed": false, "url": "https://trello.com/c/aBcDeFgH/42-send-pro-plan-quote", "cover": {"idAttachment": null, "color": null, "idUploadedBackground": null, "size": "normal", "brightness": "dark", "idPlugin": null}}
+        },
+        {
+          "platform": "hubspot", "op": "searchContacts", "purpose": "resolve deal id from customer email", "overhead": true,
+          "request": {"method": "searchContacts", "objectType": "contacts", "filterGroups": [{"filters": [{"propertyName": "email", "operator": "EQ", "value": "linh.tran@example.com"}]}], "properties": ["email", "firstname", "lastname", "lifecyclestage"], "limit": 1},
+          "response": {"total": 1, "results": [{"id": "701255530148", "properties": {"createdate": "2026-03-02T08:11:44.000Z", "email": "linh.tran@example.com", "firstname": "Linh", "hs_object_id": "701255530148", "lastmodifieddate": "2026-07-01T02:33:10.000Z", "lastname": "Tran", "lifecyclestage": "opportunity"}, "createdAt": "2026-03-02T08:11:44.000Z", "updatedAt": "2026-07-01T02:33:10.000Z", "archived": false}]}
+        },
+        {
+          "platform": "hubspot", "op": "updateDeal", "purpose": "advance deal stage + next step", "overhead": false,
+          "request": {"method": "updateObject", "objectType": "deals", "objectId": "18442200731", "properties": {"dealstage": "presentationscheduled", "amount": "1188", "hs_next_step": "Send Pro plan quote (5 seats), schedule onboarding 2026-07-22"}},
+          "response": {"id": "18442200731", "properties": {"amount": "1188", "closedate": "2026-07-31T00:00:00.000Z", "createdate": "2026-07-01T02:30:00.000Z", "days_to_close": "16", "dealname": "Linh Tran - Pro Upgrade", "dealstage": "presentationscheduled", "hs_lastmodifieddate": "2026-07-15T13:48:00.000Z", "hs_next_step": "Send Pro plan quote (5 seats), schedule onboarding 2026-07-22", "hs_object_id": "18442200731", "pipeline": "default"}, "createdAt": "2026-07-01T02:30:00.000Z", "updatedAt": "2026-07-15T13:48:00.000Z", "archived": false}
+        }
+      ]
+    },
+    {
+      "id": "s2_pipeline_sync",
+      "title": "Pipeline sync: read task board -> update deal stage -> post chat notice",
+      "calls": [
+        {
+          "platform": "trello", "op": "getListCards", "purpose": "read cards in the Done list", "overhead": false,
+          "request": {"method": "GET", "path": "/1/lists/5f1a2b3c4d5e6f7a8b9c0daa/cards", "fields": "all", "filter": "open"},
+          "response": [{"id": "66a1b2c3d4e5f6a7b8c9d0e1", "badges": {"votes": 0, "viewingMemberVoted": false, "subscribed": false, "checkItems": 0, "checkItemsChecked": 0, "comments": 0, "attachments": 0, "description": true, "due": null, "dueComplete": false, "start": null}, "checkItemStates": [], "closed": false, "dueComplete": false, "dateLastActivity": "2026-07-15T09:00:00.000Z", "desc": "Customer: Linh Tran (@linhtran)", "descData": {"emoji": {}}, "due": null, "dueReminder": null, "email": null, "idBoard": "5f1a2b3c4d5e6f7a8b9c0d1e", "idChecklists": [], "idList": "5f1a2b3c4d5e6f7a8b9c0daa", "idMembers": [], "idMembersVoted": [], "idShort": 41, "idAttachmentCover": null, "labels": [], "idLabels": [], "manualCoverAttachment": false, "name": "Demo call with Linh Tran", "pos": 32768, "shortLink": "zYxWvUt", "shortUrl": "https://trello.com/c/zYxWvUt", "start": null, "subscribed": false, "url": "https://trello.com/c/zYxWvUt/41-demo-call-with-linh-tran", "cover": {"idAttachment": null, "color": null, "idUploadedBackground": null, "size": "normal", "brightness": "dark", "idPlugin": null}}]
+        },
+        {
+          "platform": "hubspot", "op": "searchDeals", "purpose": "resolve deal id from customer", "overhead": true,
+          "request": {"method": "searchDeals", "objectType": "deals", "filterGroups": [{"filters": [{"propertyName": "dealname", "operator": "EQ", "value": "Linh Tran - Pro Upgrade"}]}], "properties": ["dealname", "dealstage", "amount"], "limit": 1},
+          "response": {"total": 1, "results": [{"id": "18442200731", "properties": {"amount": "1188", "createdate": "2026-07-01T02:30:00.000Z", "dealname": "Linh Tran - Pro Upgrade", "dealstage": "presentationscheduled", "hs_object_id": "18442200731", "hs_lastmodifieddate": "2026-07-15T09:00:00.000Z"}, "createdAt": "2026-07-01T02:30:00.000Z", "updatedAt": "2026-07-15T09:00:00.000Z", "archived": false}]}
+        },
+        {
+          "platform": "hubspot", "op": "updateDeal", "purpose": "advance stage to closed-won", "overhead": false,
+          "request": {"method": "updateObject", "objectType": "deals", "objectId": "18442200731", "properties": {"dealstage": "closedwon"}},
+          "response": {"id": "18442200731", "properties": {"amount": "1188", "closedate": "2026-07-31T00:00:00.000Z", "createdate": "2026-07-01T02:30:00.000Z", "dealname": "Linh Tran - Pro Upgrade", "dealstage": "closedwon", "hs_lastmodifieddate": "2026-07-15T13:48:00.000Z", "hs_object_id": "18442200731", "pipeline": "default"}, "createdAt": "2026-07-01T02:30:00.000Z", "updatedAt": "2026-07-15T13:48:00.000Z", "archived": false}
+        },
+        {
+          "platform": "discord", "op": "createMessage", "purpose": "notify sales channel", "overhead": false,
+          "request": {"method": "POST", "path": "/channels/8877665544332211009/messages", "content": "Deal 'Linh Tran - Pro Upgrade' ($1188) moved to Closed Won."},
+          "response": {"id": "1252334455667799001", "type": 0, "content": "Deal 'Linh Tran - Pro Upgrade' ($1188) moved to Closed Won.", "channel_id": "8877665544332211009", "author": {"id": "600112233440001111", "username": "sales_ops_bot", "global_name": "SalesBot", "avatar": null, "discriminator": "0", "public_flags": 0, "flags": 0, "bot": true}, "attachments": [], "embeds": [], "mentions": [], "mention_roles": [], "pinned": false, "mention_everyone": false, "tts": false, "timestamp": "2026-07-15T13:48:00.000000+00:00", "edited_timestamp": null, "flags": 0, "components": []}
+        }
+      ]
+    },
+    {
+      "id": "s3_daily_digest",
+      "title": "Daily digest: read channel -> create two tasks -> update CRM lifecycle",
+      "calls": [
+        {
+          "platform": "discord", "op": "getChannelMessages", "purpose": "read overnight messages", "overhead": false,
+          "request": {"method": "GET", "path": "/channels/8877665544332211009/messages", "limit": 20},
+          "response": [{"id": "1252300000000000001", "type": 0, "content": "Customer Acme asked for SSO pricing.", "channel_id": "8877665544332211009", "author": {"id": "401200300000111222", "username": "minh_ops", "global_name": "Minh", "avatar": "b2c3d4e5f6a7", "discriminator": "0", "public_flags": 0, "flags": 0, "bot": false}, "attachments": [], "embeds": [], "mentions": [], "mention_roles": [], "pinned": false, "mention_everyone": false, "tts": false, "timestamp": "2026-07-15T09:00:00.000000+00:00", "edited_timestamp": null, "flags": 0, "components": []}, {"id": "1252300000000000002", "type": 0, "content": "Beta customer wants a renewal call.", "channel_id": "8877665544332211009", "author": {"id": "402300400000111333", "username": "hoa_cs", "global_name": "Hoa", "avatar": "c3d4e5f6a7b8", "discriminator": "0", "public_flags": 0, "flags": 0, "bot": false}, "attachments": [], "embeds": [], "mentions": [], "mention_roles": [], "pinned": false, "mention_everyone": false, "tts": false, "timestamp": "2026-07-15T09:20:00.000000+00:00", "edited_timestamp": null, "flags": 0, "components": []}]
+        },
+        {
+          "platform": "trello", "op": "createCard", "purpose": "task 1 - SSO pricing", "overhead": false,
+          "request": {"method": "POST", "path": "/1/cards", "idList": "5f1a2b3c4d5e6f7a8b9c0d99", "name": "Send SSO pricing to Acme", "desc": "Customer: Acme"},
+          "response": {"id": "66a1b2c3d4e5f6a7b8c9d0f2", "badges": {"votes": 0, "viewingMemberVoted": false, "subscribed": false, "checkItems": 0, "checkItemsChecked": 0, "comments": 0, "attachments": 0, "description": true, "due": null, "dueComplete": false, "start": null}, "checkItemStates": [], "closed": false, "dueComplete": false, "dateLastActivity": "2026-07-15T13:48:00.000Z", "desc": "Customer: Acme", "descData": {"emoji": {}}, "due": null, "dueReminder": null, "email": null, "idBoard": "5f1a2b3c4d5e6f7a8b9c0d1e", "idChecklists": [], "idList": "5f1a2b3c4d5e6f7a8b9c0d99", "idMembers": [], "idMembersVoted": [], "idShort": 43, "idAttachmentCover": null, "labels": [], "idLabels": [], "manualCoverAttachment": false, "name": "Send SSO pricing to Acme", "pos": 98304, "shortLink": "mNoPqRs", "shortUrl": "https://trello.com/c/mNoPqRs", "start": null, "subscribed": false, "url": "https://trello.com/c/mNoPqRs/43-send-sso-pricing-to-acme", "cover": {"idAttachment": null, "color": null, "idUploadedBackground": null, "size": "normal", "brightness": "dark", "idPlugin": null}}
+        },
+        {
+          "platform": "trello", "op": "createCard", "purpose": "task 2 - renewal call", "overhead": false,
+          "request": {"method": "POST", "path": "/1/cards", "idList": "5f1a2b3c4d5e6f7a8b9c0d99", "name": "Schedule renewal call with Beta customer", "desc": "Customer: Beta"},
+          "response": {"id": "66a1b2c3d4e5f6a7b8c9d0f3", "badges": {"votes": 0, "viewingMemberVoted": false, "subscribed": false, "checkItems": 0, "checkItemsChecked": 0, "comments": 0, "attachments": 0, "description": true, "due": null, "dueComplete": false, "start": null}, "checkItemStates": [], "closed": false, "dueComplete": false, "dateLastActivity": "2026-07-15T13:48:00.000Z", "desc": "Customer: Beta", "descData": {"emoji": {}}, "due": null, "dueReminder": null, "email": null, "idBoard": "5f1a2b3c4d5e6f7a8b9c0d1e", "idChecklists": [], "idList": "5f1a2b3c4d5e6f7a8b9c0d99", "idMembers": [], "idMembersVoted": [], "idShort": 44, "idAttachmentCover": null, "labels": [], "idLabels": [], "manualCoverAttachment": false, "name": "Schedule renewal call with Beta customer", "pos": 131072, "shortLink": "tUvWxYz", "shortUrl": "https://trello.com/c/tUvWxYz", "start": null, "subscribed": false, "url": "https://trello.com/c/tUvWxYz/44-schedule-renewal-call", "cover": {"idAttachment": null, "color": null, "idUploadedBackground": null, "size": "normal", "brightness": "dark", "idPlugin": null}}
+        },
+        {
+          "platform": "hubspot", "op": "searchContacts", "purpose": "resolve Acme contact id", "overhead": true,
+          "request": {"method": "searchContacts", "objectType": "contacts", "filterGroups": [{"filters": [{"propertyName": "company", "operator": "EQ", "value": "Acme"}]}], "properties": ["email", "company", "lifecyclestage"], "limit": 1},
+          "response": {"total": 1, "results": [{"id": "701255530999", "properties": {"company": "Acme", "createdate": "2026-05-10T08:00:00.000Z", "email": "buyer@acme.com", "hs_object_id": "701255530999", "lastmodifieddate": "2026-07-14T00:00:00.000Z", "lifecyclestage": "lead"}, "createdAt": "2026-05-10T08:00:00.000Z", "updatedAt": "2026-07-14T00:00:00.000Z", "archived": false}]}
+        },
+        {
+          "platform": "hubspot", "op": "updateContact", "purpose": "advance lifecycle to SQL", "overhead": false,
+          "request": {"method": "updateObject", "objectType": "contacts", "objectId": "701255530999", "properties": {"lifecyclestage": "salesqualifiedlead"}},
+          "response": {"id": "701255530999", "properties": {"company": "Acme", "createdate": "2026-05-10T08:00:00.000Z", "email": "buyer@acme.com", "hs_object_id": "701255530999", "lastmodifieddate": "2026-07-15T13:48:00.000Z", "lifecyclestage": "salesqualifiedlead"}, "createdAt": "2026-05-10T08:00:00.000Z", "updatedAt": "2026-07-15T13:48:00.000Z", "archived": false}
+        }
+      ]
+    }
+  ]
+}

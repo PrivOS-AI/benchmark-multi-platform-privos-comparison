@@ -1,0 +1,93 @@
+{
+  "_note": "Three CRM/ops workflows executed against Telegram (chat) + Notion (tasks) + HubSpot (CRM). Each call carries a request and a response whose shapes mirror the vendor's documented objects. `purpose` records why the call exists; pre-fetch calls (schema/id lookups) are marked overhead=true.",
+  "scenarios": [
+    {
+      "id": "s1_lead_intake",
+      "title": "Lead intake: read customer chat -> create task -> update deal",
+      "calls": [
+        {
+          "platform": "telegram", "op": "getUpdates", "purpose": "read inbound customer message", "overhead": false,
+          "request": {"method": "getUpdates", "offset": 987654321, "limit": 10, "timeout": 0},
+          "response": {"ok": true, "result": [{"update_id": 987654321, "message": {"message_id": 4821, "from": {"id": 305512874, "is_bot": false, "first_name": "Linh", "last_name": "Tran", "username": "linhtran", "language_code": "vi"}, "chat": {"id": 305512874, "first_name": "Linh", "last_name": "Tran", "username": "linhtran", "type": "private"}, "date": 1752582000, "text": "Hi, we want to upgrade to the Pro plan for 5 seats. Can you send a quote and set up onboarding next week?"}}]}
+        },
+        {
+          "platform": "notion", "op": "retrieveDatabase", "purpose": "fetch task DB schema before create", "overhead": true,
+          "request": {"method": "retrieveDatabase", "database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"},
+          "response": {"object": "database", "id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8", "created_time": "2026-01-12T09:14:00.000Z", "last_edited_time": "2026-07-10T04:22:00.000Z", "created_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "last_edited_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "title": [{"type": "text", "text": {"content": "Sales Tasks", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Sales Tasks", "href": null}], "description": [], "icon": {"type": "emoji", "emoji": "check"}, "cover": null, "properties": {"Name": {"id": "title", "name": "Name", "type": "title", "title": {}}, "Status": {"id": "a1b2", "name": "Status", "type": "status", "status": {"options": [{"id": "s1", "name": "To Do", "color": "gray"}, {"id": "s2", "name": "In Progress", "color": "blue"}, {"id": "s3", "name": "Done", "color": "green"}], "groups": [{"id": "g1", "name": "To-do", "color": "gray", "option_ids": ["s1"]}, {"id": "g2", "name": "In progress", "color": "blue", "option_ids": ["s2"]}, {"id": "g3", "name": "Complete", "color": "green", "option_ids": ["s3"]}]}}, "Priority": {"id": "c3d4", "name": "Priority", "type": "select", "select": {"options": [{"id": "p1", "name": "Low", "color": "gray"}, {"id": "p2", "name": "Medium", "color": "yellow"}, {"id": "p3", "name": "High", "color": "red"}]}}, "Assignee": {"id": "e5f6", "name": "Assignee", "type": "people", "people": {}}, "Due": {"id": "a7b8", "name": "Due", "type": "date", "date": {}}, "Customer": {"id": "c9d0", "name": "Customer", "type": "rich_text", "rich_text": {}}}, "parent": {"type": "page_id", "page_id": "11112222-3333-4444-5555-666677778888"}, "url": "https://www.notion.so/e4f2a1b39c8d4e7fa1b2c3d4e5f6a7b8", "public_url": null, "archived": false, "in_trash": false, "is_inline": false}
+        },
+        {
+          "platform": "notion", "op": "createPage", "purpose": "create the follow-up task", "overhead": false,
+          "request": {"method": "createPage", "parent": {"database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "properties": {"Name": {"title": [{"text": {"content": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding"}}]}, "Status": {"status": {"name": "To Do"}}, "Priority": {"select": {"name": "High"}}, "Due": {"date": {"start": "2026-07-22"}}, "Customer": {"rich_text": [{"text": {"content": "Linh Tran (@linhtran)"}}]}}},
+          "response": {"object": "page", "id": "aabbccdd-1122-3344-5566-778899aabbcc", "created_time": "2026-07-15T13:48:00.000Z", "last_edited_time": "2026-07-15T13:48:00.000Z", "created_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "last_edited_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "cover": null, "icon": null, "parent": {"type": "database_id", "database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "archived": false, "in_trash": false, "properties": {"Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Send Pro plan quote to Linh Tran (5 seats) + schedule onboarding", "href": null}]}, "Status": {"id": "a1b2", "type": "status", "status": {"id": "s1", "name": "To Do", "color": "gray"}}, "Priority": {"id": "c3d4", "type": "select", "select": {"id": "p3", "name": "High", "color": "red"}}, "Assignee": {"id": "e5f6", "type": "people", "people": []}, "Due": {"id": "a7b8", "type": "date", "date": {"start": "2026-07-22", "end": null, "time_zone": null}}, "Customer": {"id": "c9d0", "type": "rich_text", "rich_text": [{"type": "text", "text": {"content": "Linh Tran (@linhtran)", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Linh Tran (@linhtran)", "href": null}]}}, "url": "https://www.notion.so/aabbccdd112233445566778899aabbcc", "public_url": null}
+        },
+        {
+          "platform": "hubspot", "op": "searchContacts", "purpose": "resolve deal id from customer email", "overhead": true,
+          "request": {"method": "searchContacts", "objectType": "contacts", "filterGroups": [{"filters": [{"propertyName": "email", "operator": "EQ", "value": "linh.tran@example.com"}]}], "properties": ["email", "firstname", "lastname", "lifecyclestage"], "limit": 1},
+          "response": {"total": 1, "results": [{"id": "701255530148", "properties": {"createdate": "2026-03-02T08:11:44.000Z", "email": "linh.tran@example.com", "firstname": "Linh", "hs_object_id": "701255530148", "lastmodifieddate": "2026-07-01T02:33:10.000Z", "lastname": "Tran", "lifecyclestage": "opportunity"}, "createdAt": "2026-03-02T08:11:44.000Z", "updatedAt": "2026-07-01T02:33:10.000Z", "archived": false}]}
+        },
+        {
+          "platform": "hubspot", "op": "updateDeal", "purpose": "advance deal stage + next step", "overhead": false,
+          "request": {"method": "updateObject", "objectType": "deals", "objectId": "18442200731", "properties": {"dealstage": "presentationscheduled", "amount": "1188", "hs_next_step": "Send Pro plan quote (5 seats), schedule onboarding 2026-07-22"}},
+          "response": {"id": "18442200731", "properties": {"amount": "1188", "closedate": "2026-07-31T00:00:00.000Z", "createdate": "2026-07-01T02:30:00.000Z", "days_to_close": "16", "dealname": "Linh Tran - Pro Upgrade", "dealstage": "presentationscheduled", "hs_lastmodifieddate": "2026-07-15T13:48:00.000Z", "hs_next_step": "Send Pro plan quote (5 seats), schedule onboarding 2026-07-22", "hs_object_id": "18442200731", "pipeline": "default"}, "createdAt": "2026-07-01T02:30:00.000Z", "updatedAt": "2026-07-15T13:48:00.000Z", "archived": false}
+        }
+      ]
+    },
+    {
+      "id": "s2_pipeline_sync",
+      "title": "Pipeline sync: read task board -> update deal stage -> post chat notice",
+      "calls": [
+        {
+          "platform": "notion", "op": "queryDatabase", "purpose": "read tasks marked done today", "overhead": false,
+          "request": {"method": "queryDatabase", "database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8", "filter": {"property": "Status", "status": {"equals": "Done"}}, "page_size": 5},
+          "response": {"object": "list", "results": [{"object": "page", "id": "aabbccdd-1122-3344-5566-778899aabbcc", "created_time": "2026-07-13T10:00:00.000Z", "last_edited_time": "2026-07-15T09:00:00.000Z", "created_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "last_edited_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "cover": null, "icon": null, "parent": {"type": "database_id", "database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "archived": false, "in_trash": false, "properties": {"Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Demo call with Linh Tran", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Demo call with Linh Tran", "href": null}]}, "Status": {"id": "a1b2", "type": "status", "status": {"id": "s3", "name": "Done", "color": "green"}}, "Priority": {"id": "c3d4", "type": "select", "select": {"id": "p3", "name": "High", "color": "red"}}, "Customer": {"id": "c9d0", "type": "rich_text", "rich_text": [{"type": "text", "text": {"content": "Linh Tran (@linhtran)", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Linh Tran (@linhtran)", "href": null}]}}, "url": "https://www.notion.so/aabbccdd112233445566778899aabbcc", "public_url": null}], "next_cursor": null, "has_more": false, "type": "page_or_database", "page_or_database": {}}
+        },
+        {
+          "platform": "hubspot", "op": "searchDeals", "purpose": "resolve deal id from customer", "overhead": true,
+          "request": {"method": "searchDeals", "objectType": "deals", "filterGroups": [{"filters": [{"propertyName": "dealname", "operator": "EQ", "value": "Linh Tran - Pro Upgrade"}]}], "properties": ["dealname", "dealstage", "amount"], "limit": 1},
+          "response": {"total": 1, "results": [{"id": "18442200731", "properties": {"amount": "1188", "createdate": "2026-07-01T02:30:00.000Z", "dealname": "Linh Tran - Pro Upgrade", "dealstage": "presentationscheduled", "hs_object_id": "18442200731", "hs_lastmodifieddate": "2026-07-15T09:00:00.000Z"}, "createdAt": "2026-07-01T02:30:00.000Z", "updatedAt": "2026-07-15T09:00:00.000Z", "archived": false}]}
+        },
+        {
+          "platform": "hubspot", "op": "updateDeal", "purpose": "advance stage to closed-won", "overhead": false,
+          "request": {"method": "updateObject", "objectType": "deals", "objectId": "18442200731", "properties": {"dealstage": "closedwon"}},
+          "response": {"id": "18442200731", "properties": {"amount": "1188", "closedate": "2026-07-31T00:00:00.000Z", "createdate": "2026-07-01T02:30:00.000Z", "dealname": "Linh Tran - Pro Upgrade", "dealstage": "closedwon", "hs_lastmodifieddate": "2026-07-15T13:48:00.000Z", "hs_object_id": "18442200731", "pipeline": "default"}, "createdAt": "2026-07-01T02:30:00.000Z", "updatedAt": "2026-07-15T13:48:00.000Z", "archived": false}
+        },
+        {
+          "platform": "telegram", "op": "sendMessage", "purpose": "notify sales channel", "overhead": false,
+          "request": {"method": "sendMessage", "chat_id": "-1002233445566", "text": "Deal 'Linh Tran - Pro Upgrade' ($1188) moved to Closed Won.", "parse_mode": "Markdown"},
+          "response": {"ok": true, "result": {"message_id": 7788, "from": {"id": 6001122334, "is_bot": true, "first_name": "SalesBot", "username": "sales_ops_bot"}, "chat": {"id": -1002233445566, "title": "Sales Ops", "type": "supergroup"}, "date": 1752588480, "text": "Deal 'Linh Tran - Pro Upgrade' ($1188) moved to Closed Won."}}
+        }
+      ]
+    },
+    {
+      "id": "s3_daily_digest",
+      "title": "Daily digest: read two channels -> create two tasks -> update CRM lifecycle",
+      "calls": [
+        {
+          "platform": "telegram", "op": "getUpdates", "purpose": "read overnight messages", "overhead": false,
+          "request": {"method": "getUpdates", "offset": 987654400, "limit": 20, "timeout": 0},
+          "response": {"ok": true, "result": [{"update_id": 987654400, "message": {"message_id": 4901, "from": {"id": 401200300, "is_bot": false, "first_name": "Minh", "username": "minh_ops", "language_code": "vi"}, "chat": {"id": -1002233445566, "title": "Sales Ops", "type": "supergroup"}, "date": 1752570000, "text": "Customer Acme asked for SSO pricing."}}, {"update_id": 987654401, "message": {"message_id": 4902, "from": {"id": 402300400, "is_bot": false, "first_name": "Hoa", "username": "hoa_cs", "language_code": "vi"}, "chat": {"id": -1002233445566, "title": "Sales Ops", "type": "supergroup"}, "date": 1752571200, "text": "Beta customer wants a renewal call."}}]}
+        },
+        {
+          "platform": "notion", "op": "createPage", "purpose": "task 1 - SSO pricing", "overhead": false,
+          "request": {"method": "createPage", "parent": {"database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "properties": {"Name": {"title": [{"text": {"content": "Send SSO pricing to Acme"}}]}, "Status": {"status": {"name": "To Do"}}, "Priority": {"select": {"name": "Medium"}}, "Customer": {"rich_text": [{"text": {"content": "Acme"}}]}}},
+          "response": {"object": "page", "id": "11aa22bb-3344-5566-7788-99aabbccddee", "created_time": "2026-07-15T13:48:00.000Z", "last_edited_time": "2026-07-15T13:48:00.000Z", "created_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "last_edited_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "cover": null, "icon": null, "parent": {"type": "database_id", "database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "archived": false, "in_trash": false, "properties": {"Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Send SSO pricing to Acme", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Send SSO pricing to Acme", "href": null}]}, "Status": {"id": "a1b2", "type": "status", "status": {"id": "s1", "name": "To Do", "color": "gray"}}, "Priority": {"id": "c3d4", "type": "select", "select": {"id": "p2", "name": "Medium", "color": "yellow"}}, "Customer": {"id": "c9d0", "type": "rich_text", "rich_text": [{"type": "text", "text": {"content": "Acme", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Acme", "href": null}]}}, "url": "https://www.notion.so/11aa22bb334455667788", "public_url": null}
+        },
+        {
+          "platform": "notion", "op": "createPage", "purpose": "task 2 - renewal call", "overhead": false,
+          "request": {"method": "createPage", "parent": {"database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "properties": {"Name": {"title": [{"text": {"content": "Schedule renewal call with Beta customer"}}]}, "Status": {"status": {"name": "To Do"}}, "Priority": {"select": {"name": "High"}}, "Customer": {"rich_text": [{"text": {"content": "Beta"}}]}}},
+          "response": {"object": "page", "id": "22bb33cc-4455-6677-8899-aabbccddeeff", "created_time": "2026-07-15T13:48:00.000Z", "last_edited_time": "2026-07-15T13:48:00.000Z", "created_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "last_edited_by": {"object": "user", "id": "8a1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e"}, "cover": null, "icon": null, "parent": {"type": "database_id", "database_id": "e4f2a1b3-9c8d-4e7f-a1b2-c3d4e5f6a7b8"}, "archived": false, "in_trash": false, "properties": {"Name": {"id": "title", "type": "title", "title": [{"type": "text", "text": {"content": "Schedule renewal call with Beta customer", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Schedule renewal call with Beta customer", "href": null}]}, "Status": {"id": "a1b2", "type": "status", "status": {"id": "s1", "name": "To Do", "color": "gray"}}, "Priority": {"id": "c3d4", "type": "select", "select": {"id": "p3", "name": "High", "color": "red"}}, "Customer": {"id": "c9d0", "type": "rich_text", "rich_text": [{"type": "text", "text": {"content": "Beta", "link": null}, "annotations": {"bold": false, "italic": false, "strikethrough": false, "underline": false, "code": false, "color": "default"}, "plain_text": "Beta", "href": null}]}}, "url": "https://www.notion.so/22bb33cc44556677", "public_url": null}
+        },
+        {
+          "platform": "hubspot", "op": "searchContacts", "purpose": "resolve Acme contact id", "overhead": true,
+          "request": {"method": "searchContacts", "objectType": "contacts", "filterGroups": [{"filters": [{"propertyName": "company", "operator": "EQ", "value": "Acme"}]}], "properties": ["email", "company", "lifecyclestage"], "limit": 1},
+          "response": {"total": 1, "results": [{"id": "701255530999", "properties": {"company": "Acme", "createdate": "2026-05-10T08:00:00.000Z", "email": "buyer@acme.com", "hs_object_id": "701255530999", "lastmodifieddate": "2026-07-14T00:00:00.000Z", "lifecyclestage": "lead"}, "createdAt": "2026-05-10T08:00:00.000Z", "updatedAt": "2026-07-14T00:00:00.000Z", "archived": false}]}
+        },
+        {
+          "platform": "hubspot", "op": "updateContact", "purpose": "advance lifecycle to SQL", "overhead": false,
+          "request": {"method": "updateObject", "objectType": "contacts", "objectId": "701255530999", "properties": {"lifecyclestage": "salesqualifiedlead"}},
+          "response": {"id": "701255530999", "properties": {"company": "Acme", "createdate": "2026-05-10T08:00:00.000Z", "email": "buyer@acme.com", "hs_object_id": "701255530999", "lastmodifieddate": "2026-07-15T13:48:00.000Z", "lifecyclestage": "salesqualifiedlead"}, "createdAt": "2026-05-10T08:00:00.000Z", "updatedAt": "2026-07-15T13:48:00.000Z", "archived": false}
+        }
+      ]
+    }
+  ]
+}
