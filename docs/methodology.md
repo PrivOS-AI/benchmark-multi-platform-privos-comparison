@@ -1,5 +1,8 @@
 # Methodology
 
+> This page describes the **modelled** benchmark (fixtures + tokenizer). The live agent benchmark — real model,
+> real MCP servers, provider-reported tokens, n=5 — and its method are in [live-agent-results.md](live-agent-results.md).
+
 ## Question
 
 When an AI agent runs an operations workflow (read chat → create task → update
