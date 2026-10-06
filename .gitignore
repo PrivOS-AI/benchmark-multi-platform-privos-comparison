@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 .env
 results/live_capture.json
+agent_runner/.env
+agent_runner/seed_state.json
+agent_runner/results/

@@ -1,18 +1,47 @@
 # benchmark-multi-platform-privos-comparison
 
-A reproducible token-cost benchmark comparing how many tokens an AI agent spends
-to run the same operations workflows on:
+How many tokens does an AI agent spend to run the same sales-ops work when chat, tasks and CRM live in separate tools
+connected over MCP, versus in PrivOS (one workspace)?
 
-- **Multi-platform stack** — Telegram (chat) + Notion (tasks) + HubSpot (CRM),
-  each connected as a separate MCP server; versus
-- **PrivOS unified stack** — chat, tasks, and CRM as rooms + list items over one
-  hub `/api/v1` surface.
+## Live result (2026-10-06)
 
-Tokens are what an LLM agent actually pays for (price, latency, context pressure),
-so "which stack is cheaper to operate as an agent" reduces to "which stack makes
-the model read fewer tokens for the same work."
+A real agent loop (`glm-5.3`, temperature 0) ran three jobs — lead intake, pipeline sync, daily digest — 5 times per
+stack against real test workspaces; tokens are the provider's own `usage` counts. Full write-up, tables and limits:
+**[docs/live-agent-results.md](docs/live-agent-results.md)**.
 
-## Result
+| vs PrivOS (sum of per-job medians) | Total tokens | Uncached input | Est. cost (cached = 0.2×) | USD at GLM-5.3 list price |
+|---|--:|--:|--:|--:|
+| Telegram + Notion + HubSpot, MCP servers as installed (47 tools = 45 MCP + 2 Telegram) | **3.64×** | 1.09× | 2.16× | 2.22× |
+| Slack + Notion + HubSpot, MCP servers as installed (53 tools) | **3.49×** | 1.13× | 2.23× | 2.29× |
+| Minimal hand-written tools on every side (control) | 1.12× | | | |
+
+**Multi-tool stacks vs PrivOS: ~3.5–3.6× the tokens with MCP servers as installed (~2.2–2.3× estimated cost with prompt
+caching).**
+
+Headline ratios are sums of per-job medians over 5 runs (A 3.64×, C 3.49×); using means instead gives ~3.2× (A 3.24×,
+C 3.16×), because a few long PrivOS runs raise its mean. The video's on-screen 4.1–4.6× comes from its own 3-run
+recording; its end card quotes this 5-run headline.
+
+The gap comes from loading full MCP tool catalogs (~31k tokens re-sent on every call); most of it hits the prompt
+cache. On larger lists PrivOS currently uses more tokens (~1.4×). Limits, including that and a hand-filtered MCP best
+case: [docs/live-agent-results.md#limits](docs/live-agent-results.md#limits).
+
+```bash
+cd agent_runner && cp .env.example .env   # TEST workspaces only; needs Python 3.9+ and Node.js (npx runs the MCP servers)
+python3 seed.py                           # seeds every platform configured in .env (or name them: seed.py notion hubspot slack)
+# post the 3 printed messages in the Telegram test group yourself, as an anonymous admin (bots can't see other bots)
+./run_all.sh && python3 report.py results/
+```
+
+See [Reproduce](docs/live-agent-results.md#reproduce) for the full steps.
+
+## Historical: modelled estimate (superseded)
+
+> The section below is the original **modelled** benchmark (fixtures + tokenizer, no live agent). Its 6.0–6.4× figure
+> assumed every tool schema and payload is counted once per session; the live run above replaces it. Kept for the
+> method and the sensitivity knobs.
+
+### Modelled result
 
 Three workflows (lead intake, pipeline sync, daily digest), measured with a real
 tokenizer (`tiktoken/cl100k_base`), against **two** multi-platform stacks to show
@@ -48,7 +77,7 @@ but its card responses are verbose, so the gap persists.)
 **Read it as a range, not a point.** Both are lower bounds — model reasoning
 tokens (excluded here) grow with hop count and would widen the gap.
 
-### Why the gap exists (all three confirmed by the numbers)
+### Why the model predicted a gap
 
 1. **16× on fixed cost** — three MCP catalogs (~49 tools) vs one (~6 tools) sit in
    context all session.
@@ -67,7 +96,7 @@ native rooms/lists — the actual PrivOS design.
 ## Run it
 
 ```bash
-pip install -r requirements.txt        # or: ~/.claude/skills/.venv/bin/python3
+pip install -r requirements.txt
 python run_benchmark.py                 # modeled benchmark (all stacks)
 python src/live_capture.py              # optional: real API sizes, read-only
 ```
@@ -97,6 +126,9 @@ fixtures/multiplatform-discord-trello/ Discord + Trello + HubSpot
 docs/methodology.md                    rationale, controls, limitations
 docs/references.md                     API-doc citations grounding the fixtures
 docs/live-capture.md                   live-capture usage + safety
+docs/live-agent-results.md             live agent benchmark: results, limits, reproduce
+agent_runner/                          live agent loop, seeding, report, redaction, demo
+results/agent_runs/                    redacted per-call JSON of the live runs
 .env.example                           credential template
 results/                               generated output
 ```
@@ -120,3 +152,10 @@ estimates; the tokenizer is a BPE proxy whose *ratios* are robust. This measures
 **token cost only** — not feature depth. See `docs/methodology.md` → Limitations
 for the full list, and `docs/live-capture.md` to upgrade to recorded API
 responses (needs platform credentials + a PrivOS bot token).
+
+## License
+
+MIT — see [LICENSE](LICENSE). The licence covers the benchmark code and docs; tool schemas and API responses
+recorded in `results/agent_runs/` belong to their respective vendors.
+
+The installer is source-available today; we plan to open the full PrivOS source in the near future (no date yet).
